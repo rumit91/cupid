@@ -1,0 +1,38 @@
+{
+  "name": "michelle-timur-cupid",
+  "version": "0.0.0",
+  "description": "",
+  "license": "",
+  "repository": "",
+  "author": "",
+  "keywords": [
+    ""
+  ],
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "test": "gulp test"
+  },
+  "dependencies": {
+    "express": "^4.13.4",
+    "fb": "^1.0.2",
+    "nconf": "^0.8.2"
+  },
+  "devDependencies": {
+    "del": "2.0.2",
+    "gulp": "^3.9.0",
+    "gulp-help": "^1.6.0",
+    "gulp-inject": "3.0.0",
+    "gulp-jasmine": "^2.0.1",
+    "gulp-replace": "^0.5.4",
+    "gulp-sequence": "0.4.1",
+    "gulp-tsconfig-files": "0.0.2",
+    "gulp-tslint": "^3.1",
+    "gulp-typescript": "^2.10.0",
+    "jasmine": "^2.3.1"
+  },
+  "engines": {
+    "node": ">=0.12.0"
+  }
+}
