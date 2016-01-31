@@ -66,6 +66,11 @@ gulp.task('views', function () {
         .pipe(gulp.dest('./lib/views/'));
 });
 
+gulp.task('copy-config', function () {
+    return gulp.src('./config.json')
+        .pipe(gulp.dest('./lib/'));
+});
+
 //run tslint task, then run _tsconfig_files and _gen_tsrefs in parallel, then run _build
 gulp.task('build', 'Compiles all TypeScript source files and updates module references', function(callback) {
     gulpSequence('views', 'tslint', ['tsconfig_files', 'gen_tsrefs'], '_build')(callback)
@@ -84,7 +89,7 @@ gulp.task('_replace', function () {
 });
 
 gulp.task('watch', function() {
-    gulp.watch([tsFilesGlob, './src/views/*'], ['build']);
+    gulp.watch([tsFilesGlob, './src/views/*'], ['build', 'copy-config']);
 });
 
 gulp.task('default', ['build', 'watch']);
