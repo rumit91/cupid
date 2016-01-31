@@ -6,7 +6,7 @@ import express = require('express');
 import fb = require('FB');
 import nconf = require('nconf');
 import request = require('request');
-import url = require('url');
+import jade = require('jade');
 
 nconf.file({ file: './config.json' });
 const FB_APP_ID = nconf.get('fbAppId');
@@ -21,11 +21,17 @@ let fbTokenExpiration: number = 0;
 let baseUrl = 'http://localhost:3000';
 let facebookLoginRedirect = '/fbCodeRedirect';
 
-// Immediatly redirect to the Facbook Auth flow 
+app.set('view engine', 'jade');
+
 app.get('/', (req, res) => {
+    res.render('index');
+});
+
+// Immediatly redirect to the Facbook Auth flow 
+app.get('/login', (req, res) => {
     let fbUrl = 'https://www.facebook.com/dialog/oauth?client_id=' + FB_APP_ID
         + '&redirect_uri=' + encodeURIComponent(baseUrl + facebookLoginRedirect)
-        + '&scope=' + 'public_profile,user_friends,user_photos,user_posts,user_managed_groups';
+        + '&scope=' + 'public_profile,user_friends,user_photos,user_posts,user_managed_groups,publish_actions';
     res.redirect(fbUrl);
 });
 
@@ -51,7 +57,14 @@ app.get(facebookLoginRedirect, (req, res) => {
 
 app.get('/greet', (req, res) => {
     fb.setAccessToken(fbShortLivedAccessToken);
-    fb.api('197428033930849', (fbres) => {
+    fb.api('816116845130757/feed', 'POST', {
+        message: 'Testing this post',
+        link: 'https://www.facebook.com/photo.php?fbid=700295654828'
+    }, (fbres) => {
+        res.send(fbres);
+    });
+    /*
+    fb.api('816116845130757', (fbres) => {
         if (!fbres) {
             console.log(fbres.error);
         } else {
@@ -60,6 +73,7 @@ app.get('/greet', (req, res) => {
             res.send(greeter.greet());
         }
     });
+    */
 });
 
 app.listen(3000, function () {
