@@ -71,6 +71,11 @@ class WebApp {
         this._app.get('/cupid', (req, res) => {
             this._createCupid(res);
         });
+        
+        this._app.get('/cupid/photo', (req, res) => {
+            this._cupid.postPhoto();
+            res.send('Posting a photo');
+        });
     }
 
     private _convertCodeToToken(res: express.Response, code: string) {
@@ -92,7 +97,7 @@ class WebApp {
                 user.accessToken = fbAccessToken;
                 user.tokenExpiration = fbTokenExpiration;
                 this._useAlternativeUserToPost = true;
-                res.render('cupid');
+                res.redirect('./cupid');
             } else {
                 res.send('Sorry your id (' + fbres.id + ') does not match the one specified in the config file.');
             }
@@ -133,8 +138,8 @@ class WebApp {
     private _createCupid(res: express.Response) {
         if (user.accessToken !== '') {
             this._cupid = new Cupid(user, this._useAlternativeUserToPost, this._fbClient, GOOGLE_API_KEY);
-            this._cupid.postPhoto();
-            //this._cupid.start();
+            this._cupid.postInitialMessage();
+            this._cupid.start();
             res.send('Cupid has been started <3');
         } else {
             res.send('No access token :(');

@@ -29,31 +29,48 @@ class Cupid {
         }
     }
     
+    postInitialMessage() {
+        const link = 'https://www.youtube.com/watch?v=VPRjCeoBqrI';
+        const message = '💘Hi ' + this._getCoupleNames() + '!💘 \n\n'
+                      + 'Valentine\'s Day is coming up and I\'ve been assigned to be your cupid this year! ' 
+                      + 'For the next 10 days I\'ll send you photos of the two of you to remind you of all the amazing times you\'ve had together 💑\n\n'
+                      + 'To start things off maybe ' + this._user.userName.split(' ')[0] + ' can sing you this song? :P';
+        this._fbClient.postToGroupFeed(this._user.groupId, message, link, '', '');
+    }
+    
     postPhoto() {
         this._fbClient.setAccessToken(this._user.accessToken);
         const message = this._getPostMessage();
         const photoId = _.sample(this._user.photoIdsWithSO);
-        const linkTitle = this._getPhotoTitle();
-        const facebookPhotoUrl = this._facebookPhotoUrl + photoId;
-        this._fbClient.getPhoto(photoId).then<any>((res) => {
-            console.log('Can access photo!');
-            this._fbClient.postToGroupFeed(this._user.groupId, message, facebookPhotoUrl, this._postImage, linkTitle);
-        }).fail(reason => {
-            console.log('Can\'t access photo :(');
-            this._shortenUrl(facebookPhotoUrl).then<any>((shortUrl: string) => {
-                this._fbClient.postToGroupFeed(this._user.groupId, message, shortUrl, this._postImage, linkTitle);
+        if(photoId) {
+            const linkTitle = this._getPhotoTitle();
+            const facebookPhotoUrl = this._facebookPhotoUrl + photoId;
+            this._fbClient.getPhoto(photoId).then<any>((res) => {
+                this._fbClient.postToGroupFeed(this._user.groupId, message, facebookPhotoUrl, this._postImage, linkTitle);
+            }).fail(reason => {
+                this._shortenUrl(facebookPhotoUrl).then<any>((shortUrl: string) => {
+                    this._fbClient.postToGroupFeed(this._user.groupId, message, shortUrl, this._postImage, linkTitle);
+                });
             });
-        });
+        }
     }
     
     private _getPhotoTitle(): string {
+        return 'Photo of ' + this._getCoupleNames();
+    }
+    
+    private _getCoupleNames(): string {
         const soFirstName = this._user.soName.split(' ')[0];
         const userFirstName = this._user.userName.split(' ')[0];
-        return 'Photo of ' + soFirstName + ' & ' + userFirstName;
+        return soFirstName + ' & ' + userFirstName;
     }
     
     private _getPostMessage(): string {
-        return 'Enjoy this photo <3';
+        let message = 'Enjoy this photo <3';
+        if (!this._useAlternativeUserToPost || this._user.userId === this._user.postingUserId) {
+            message = '"' + message + '" - Your Cupid';
+        }
+        return message;
     }
        
     private _schedulePostingJob() {
@@ -72,8 +89,6 @@ class Cupid {
             }
         }, (error, response, body) => {
             if (!error && response.statusCode == 200) {
-                console.log('body');
-                console.log(body);
                 deferred.resolve(body.id);
             } else {
                 console.log('error');
