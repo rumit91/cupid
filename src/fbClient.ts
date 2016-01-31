@@ -73,7 +73,8 @@ class FBClient {
     getPhotosOfMe(after?: string) {
         let deferred = Q.defer();
         fb.setAccessToken(this._accessToken);
-        let apiEndpoint = 'me/photos?limit=100' + (after ? ('&after=' + after) : '');
+        const fields = '&fields=id,created_time,name';
+        const apiEndpoint = 'me/photos?limit=1000' + fields + (after ? ('&after=' + after) : '');
         fb.api(apiEndpoint, (res) => {
             if (!res || res.error) {
                 console.log(!res ? 'error occurred' : res.error);

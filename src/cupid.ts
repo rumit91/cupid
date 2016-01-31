@@ -14,7 +14,21 @@ class Cupid {
     private _user: User;
     private _googleApiKey: string;
     private _postImage = 'http://i.imgur.com/sikWsoa.png';
-    private _facebookPhotoUrl = 'https://www.facebook.com/photo.php?fbid='
+    private _facebookPhotoUrl = 'https://www.facebook.com/photo.php?fbid=';
+    private _postedOutOfPhotosMessage = false;   
+    
+    private _photoMessages = [
+        'Enjoy this photo <3',
+        'You two are so cute!!!',
+        'I wish I was this good looking!',
+        'Look at you guys! Beautiful!',
+        'Remember this?',
+        'You guys are so awesome!',
+        ':)',
+        'I hope you like this one!',
+        'Ah good times...',
+        'Here\'s a good one!'
+    ];
     
     constructor(user: User, useAlternativeUserToPost: boolean, fbClient: FBClient, googleApiKey: string) {
         this._user = user;
@@ -46,12 +60,21 @@ class Cupid {
             const linkTitle = this._getPhotoTitle();
             const facebookPhotoUrl = this._facebookPhotoUrl + photoId;
             this._fbClient.getPhoto(photoId).then<any>((res) => {
+                this._user.photoIdsWithSO = _.filter(this._user.photoIdsWithSO, photo =>{
+                    return photo !== photoId;
+                });
                 this._fbClient.postToGroupFeed(this._user.groupId, message, facebookPhotoUrl, this._postImage, linkTitle);
             }).fail(reason => {
                 this._shortenUrl(facebookPhotoUrl).then<any>((shortUrl: string) => {
                     this._fbClient.postToGroupFeed(this._user.groupId, message, shortUrl, this._postImage, linkTitle);
                 });
             });
+        } else if(this._user.photoIdsWithSO.length === 0 && !this._postedOutOfPhotosMessage) {
+            const message = 'I wanted to post a photo of you two, but I\'m all out of them :(\n' 
+                          + 'Here\'s a consolation video.' 
+            const consolationVideo = 'https://www.youtube.com/watch?v=f5KyMNDJE6o';
+            this._fbClient.postToGroupFeed(this._user.groupId, message, consolationVideo, '', '');
+            this._postedOutOfPhotosMessage = true;
         }
     }
     
@@ -66,7 +89,7 @@ class Cupid {
     }
     
     private _getPostMessage(): string {
-        let message = 'Enjoy this photo <3';
+        let message = _.sample(this._photoMessages);
         if (!this._useAlternativeUserToPost || this._user.userId === this._user.postingUserId) {
             message = '"' + message + '" - Your Cupid';
         }

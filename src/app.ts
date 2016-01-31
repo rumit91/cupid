@@ -20,8 +20,17 @@ let user: User = nconf.get('user');
 
 interface fbImageMetaData {
     id: string;
-    createdTime: string; 
+    created_time: string; 
     name?: string;
+    from?: {
+        name: string,
+        id: string,
+    },
+    images?: {
+        height: number;
+        width: number;
+        source: string;
+    }[];
 }
 
 interface fbImageTag {
@@ -108,6 +117,11 @@ class WebApp {
             let photos: fbImageMetaData[] = fbres.data;
             let after: string = fbres.paging.cursors.after;
             let promises: Q.IPromise<any>[] = [];
+            /*
+            let notMyPhotos = _.filter(photos, photo => {
+               return photo.from.id !== user.userId; 
+            });
+            */
             _.each(photos, photo => {
                 promises.push(this._checkIfPhotoHasSO(photo));
             });
