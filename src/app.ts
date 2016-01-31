@@ -14,6 +14,7 @@ import Q = require('q');
 nconf.file({ file: './config.json' });
 const FB_APP_ID = nconf.get('fbAppId');
 const FB_APP_SECRET = nconf.get('fbAppSecret');
+const GOOGLE_API_KEY = nconf.get('googleApiKey');
 const baseUrl = nconf.get('baseUrl');
 let user: User = nconf.get('user');
 
@@ -131,7 +132,7 @@ class WebApp {
     
     private _createCupid(res: express.Response) {
         if (user.accessToken !== '') {
-            this._cupid = new Cupid(user, this._useAlternativeUserToPost, this._fbClient);
+            this._cupid = new Cupid(user, this._useAlternativeUserToPost, this._fbClient, GOOGLE_API_KEY);
             this._cupid.postPhoto();
             //this._cupid.start();
             res.send('Cupid has been started <3');

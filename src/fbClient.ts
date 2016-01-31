@@ -114,6 +114,19 @@ class FBClient {
         });
         return deferred.promise;
     }
+    
+    getPhoto(photoId: string) {
+        let deferred = Q.defer();
+        fb.setAccessToken(this._accessToken);
+        fb.api(photoId + '?fields=images', (res) => {
+            if (!res || res.error) {
+                console.log(!res ? 'error occurred' : res.error);
+                deferred.reject(new Error(!res ? 'error occurred' : res.error));
+            }
+            deferred.resolve(res);
+        });
+        return deferred.promise;
+    }
 }
 
 export = FBClient;
