@@ -3,6 +3,7 @@
 
 import User = require('./models/user');
 import FBClient = require('./fbClient');
+import Cupid = require('./cupid');
 import express = require('express');
 import nconf = require('nconf');
 import jade = require('jade');
@@ -32,6 +33,8 @@ class WebApp {
     private _facebookRedirect = '/fbLoginRedirect';
     private _baseUrl: string;
     private _fbClient: FBClient;
+    private _useAlternativeUserToPost = false;
+    private _cupid: Cupid;
 
     constructor(baseUrl: string, fbClient: FBClient) {
         this._baseUrl = baseUrl;
@@ -63,6 +66,10 @@ class WebApp {
         this._app.get(this._facebookRedirect, (req, res) => {
             this._convertCodeToToken(res, req.query.code);
         });
+        
+        this._app.get('/cupid', (req, res) => {
+            this._createCupid(res);
+        });
     }
 
     private _convertCodeToToken(res: express.Response, code: string) {
@@ -79,8 +86,14 @@ class WebApp {
                 user.accessToken = fbAccessToken;
                 user.tokenExpiration = fbTokenExpiration;
                 this._getPhotos(res);
+            } else if (user.userId !== user.postingUserId && fbres.id === user.postingUserId) {
+                // Using alternate user to post.
+                user.accessToken = fbAccessToken;
+                user.tokenExpiration = fbTokenExpiration;
+                this._useAlternativeUserToPost = true;
+                res.render('cupid');
             } else {
-                res.send('Sorry your id does not match the one specified in the config file.');
+                res.send('Sorry your id (' + fbres.id + ') does not match the one specified in the config file.');
             }
         });
     }
@@ -114,6 +127,17 @@ class WebApp {
              }
              return '';                 
          });
+    }
+    
+    private _createCupid(res: express.Response) {
+        if (user.accessToken !== '') {
+            this._cupid = new Cupid(user, this._useAlternativeUserToPost, this._fbClient);
+            this._cupid.postPhoto();
+            //this._cupid.start();
+            res.send('Cupid has been started <3');
+        } else {
+            res.send('No access token :(');
+        }
     }
 }
 

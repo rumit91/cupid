@@ -56,10 +56,24 @@ class FBClient {
         return deferred.promise;
     }
     
+    getMyGroups() {
+        let deferred = Q.defer();
+        fb.setAccessToken(this._accessToken);
+        fb.api('me/groups', (res) => {
+            if (!res || res.error) {
+                console.log(!res ? 'error occurred' : res.error);
+                deferred.reject(new Error(!res ? 'error occurred' : res.error));
+            }
+            console.log(res);
+            deferred.resolve(res);
+        });
+        return deferred.promise;
+    }
+    
     getPhotosOfMe(after?: string) {
         let deferred = Q.defer();
         fb.setAccessToken(this._accessToken);
-        let apiEndpoint = 'me/photos?limit=10' + (after ? ('&after=' + after) : '');
+        let apiEndpoint = 'me/photos?limit=100' + (after ? ('&after=' + after) : '');
         fb.api(apiEndpoint, (res) => {
             if (!res || res.error) {
                 console.log(!res ? 'error occurred' : res.error);
@@ -74,6 +88,24 @@ class FBClient {
         let deferred = Q.defer();
         fb.setAccessToken(this._accessToken);
         fb.api(photoId + '/tags', (res) => {
+            if (!res || res.error) {
+                console.log(!res ? 'error occurred' : res.error);
+                deferred.reject(new Error(!res ? 'error occurred' : res.error));
+            }
+            deferred.resolve(res);
+        });
+        return deferred.promise;
+    }
+    
+    postToGroupFeed(groupId: string, message: string, link: string, linkPicture: string, linkTitle: string) {
+        let deferred = Q.defer();
+        fb.setAccessToken(this._accessToken);
+        fb.api(groupId + '/feed', 'POST', {
+            message: message,
+            link: link,
+            picture: linkPicture,
+            name: linkTitle
+        }, (res: any) => {
             if (!res || res.error) {
                 console.log(!res ? 'error occurred' : res.error);
                 deferred.reject(new Error(!res ? 'error occurred' : res.error));
