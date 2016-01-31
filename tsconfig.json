@@ -13,6 +13,10 @@
   ],
   "files": [
     "src\\app.ts",
-    "src\\greeter.ts"
+    "src\\cupid.ts",
+    "src\\fbClient.ts",
+    "src\\greeter.ts",
+    "src\\models\\user.ts",
+    "typings"
   ]
 }

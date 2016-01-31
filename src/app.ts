@@ -1,81 +1,83 @@
 /// <reference path="../typings/tsd.d.ts" />
 /// <reference path="../typings/app.d.ts" />
 
-import Greeter = require('./greeter');
+import User = require('./models/user');
+import FBClient = require('./fbClient');
 import express = require('express');
-import fb = require('FB');
 import nconf = require('nconf');
-import request = require('request');
 import jade = require('jade');
+import _ = require('lodash');
+import Q = require('q');
 
+// Access config
 nconf.file({ file: './config.json' });
 const FB_APP_ID = nconf.get('fbAppId');
 const FB_APP_SECRET = nconf.get('fbAppSecret');
+const baseUrl = nconf.get('baseUrl');
+let user: User = nconf.get('user');
 
-const app = express();
-const greeter = new Greeter('friend');
+class WebApp {
+    private _app: express.Express;
+    private _facebookRedirect = '/fbLoginRedirect';
+    private _baseUrl: string;
+    private _fbClient: FBClient;
 
-let fbShortLivedAccessToken: string = '';
-let fbTokenExpiration: number = 0;
+    constructor(baseUrl: string, fbClient: FBClient) {
+        this._baseUrl = baseUrl;
+        this._fbClient = fbClient;
 
-let baseUrl = 'http://localhost:3000';
-let facebookLoginRedirect = '/fbCodeRedirect';
+        this._app = express();
+        this._app.set('view engine', 'jade');
+        this._setupRoutes();
+    }
 
-app.set('view engine', 'jade');
+    start() {
+        this._app.listen(3000, function() {
+            console.log('Listening on port 3000!');
+        });
+    }
 
-app.get('/', (req, res) => {
-    res.render('index');
-});
+    private _setupRoutes() {
+        // Base route
+        this._app.get('/', (req, res) => {
+            res.render('index');
+        });
+        
+        // Login route: immediatly redirect to the Facbook Auth flow
+        this._app.get('/login', (req, res) => {
+            console.log(this._fbClient.getFacebookAuthUrl(this._baseUrl + this._facebookRedirect));
+            res.redirect(this._fbClient.getFacebookAuthUrl(this._baseUrl + this._facebookRedirect));
+        });
+        
+        // Login redirect: Convert the code provided by Facebook into an access token.
+        this._app.get(this._facebookRedirect, (req, res) => {
+            console.log('about to convert code to token');
+            this._convertCodeToToken(res, req.query.code);
+        });
+    }
 
-// Immediatly redirect to the Facbook Auth flow 
-app.get('/login', (req, res) => {
-    let fbUrl = 'https://www.facebook.com/dialog/oauth?client_id=' + FB_APP_ID
-        + '&redirect_uri=' + encodeURIComponent(baseUrl + facebookLoginRedirect)
-        + '&scope=' + 'public_profile,user_friends,user_photos,user_posts,user_managed_groups,publish_actions';
-    res.redirect(fbUrl);
-});
-
-// Convert the code provided by Facebook into an access token.
-app.get(facebookLoginRedirect, (req, res) => {
-    const code = req.query.code;
-    
-    fb.api('oauth/access_token', {
-        client_id: FB_APP_ID,
-        client_secret: FB_APP_SECRET,
-        redirect_uri: baseUrl + facebookLoginRedirect,
-        code: code
-    }, (fbres: any) => {
-        if (!fbres || fbres.error) {
-            console.log(!fbres ? 'error occurred' : fbres.error);
-            return;
-        }
-        fbShortLivedAccessToken = fbres.access_token;
-        fbTokenExpiration = fbres.expires ? fbres.expires : 0;
-        res.redirect('/greet');
-    });
-});
-
-app.get('/greet', (req, res) => {
-    fb.setAccessToken(fbShortLivedAccessToken);
-    fb.api('816116845130757/feed', 'POST', {
-        message: 'Testing this post',
-        link: 'https://www.facebook.com/photo.php?fbid=700295654828'
-    }, (fbres) => {
-        res.send(fbres);
-    });
-    /*
-    fb.api('816116845130757', (fbres) => {
-        if (!fbres) {
-            console.log(fbres.error);
-        } else {
+    private _convertCodeToToken(res: express.Response, code: string) {
+        this._fbClient.getAccessTokenFromCode(code, this._baseUrl + this._facebookRedirect).then<any>((fbres: any) => {
+            console.log('convertCodeToToken fbres');
             console.log(fbres);
-            greeter.greeting = fbres.name;
-            res.send(greeter.greet());
-        }
-    });
-    */
-});
+            const fbTokenExpiration = new Date(new Date().getTime() + (fbres.expires ? fbres.expires : 0));
+            this._confirmAndSaveAccessToken(res, fbres.access_token, fbTokenExpiration);
+        });
+    }
 
-app.listen(3000, function () {
-  console.log('Listening on port 3000!');
-});
+    private _confirmAndSaveAccessToken(res: express.Response, fbAccessToken: string, fbTokenExpiration: Date) {
+        this._fbClient.setAccessToken(fbAccessToken);
+        this._fbClient.getMe().then<any>((fbres: any) => {
+            if (fbres.id === user.userId) {
+                user.accessToken = fbAccessToken;
+                user.tokenExpiration = fbTokenExpiration;
+                res.send('Ready to do actual work!');
+            } else {
+                res.send('Sorry your id does not match the one specified in the config file.');
+            }
+        });
+    }
+}
+
+let app = new WebApp(baseUrl, new FBClient(FB_APP_ID, FB_APP_SECRET));
+app.start();

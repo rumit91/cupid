@@ -61,9 +61,14 @@ gulp.task('_build', 'INTERNAL TASK - Compiles all TypeScript source files', func
   });*/
 });
 
+gulp.task('views', function () {
+    return gulp.src('./src/views/*')
+        .pipe(gulp.dest('./lib/views/'));
+});
+
 //run tslint task, then run _tsconfig_files and _gen_tsrefs in parallel, then run _build
 gulp.task('build', 'Compiles all TypeScript source files and updates module references', function(callback) {
-    gulpSequence('tslint', ['tsconfig_files', 'gen_tsrefs'], '_build')(callback)
+    gulpSequence('views', 'tslint', ['tsconfig_files', 'gen_tsrefs'], '_build')(callback)
 });
 
 gulp.task('test', 'Runs the Jasmine test specs', ['build'], function () {
@@ -79,7 +84,7 @@ gulp.task('_replace', function () {
 });
 
 gulp.task('watch', function() {
-    gulp.watch([tsFilesGlob], ['build']);
+    gulp.watch([tsFilesGlob, './src/views/*'], ['build']);
 });
 
 gulp.task('default', ['build', 'watch']);

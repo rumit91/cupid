@@ -31,6 +31,12 @@
     },
     "jade/jade.d.ts": {
       "commit": "5d0f2126c8dac8fce0ff020218aea06607213b0d"
+    },
+    "lodash/lodash.d.ts": {
+      "commit": "5d0f2126c8dac8fce0ff020218aea06607213b0d"
+    },
+    "q/Q.d.ts": {
+      "commit": "5d0f2126c8dac8fce0ff020218aea06607213b0d"
     }
   }
 }
