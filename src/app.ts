@@ -16,6 +16,17 @@ const FB_APP_SECRET = nconf.get('fbAppSecret');
 const baseUrl = nconf.get('baseUrl');
 let user: User = nconf.get('user');
 
+interface fbImageMetaData {
+    id: string;
+    createdTime: string; 
+    name?: string;
+}
+
+interface fbImageTag {
+    id: string;
+    name: string;
+}
+
 class WebApp {
     private _app: express.Express;
     private _facebookRedirect = '/fbLoginRedirect';
@@ -45,21 +56,17 @@ class WebApp {
         
         // Login route: immediatly redirect to the Facbook Auth flow
         this._app.get('/login', (req, res) => {
-            console.log(this._fbClient.getFacebookAuthUrl(this._baseUrl + this._facebookRedirect));
             res.redirect(this._fbClient.getFacebookAuthUrl(this._baseUrl + this._facebookRedirect));
         });
         
         // Login redirect: Convert the code provided by Facebook into an access token.
         this._app.get(this._facebookRedirect, (req, res) => {
-            console.log('about to convert code to token');
             this._convertCodeToToken(res, req.query.code);
         });
     }
 
     private _convertCodeToToken(res: express.Response, code: string) {
         this._fbClient.getAccessTokenFromCode(code, this._baseUrl + this._facebookRedirect).then<any>((fbres: any) => {
-            console.log('convertCodeToToken fbres');
-            console.log(fbres);
             const fbTokenExpiration = new Date(new Date().getTime() + (fbres.expires ? fbres.expires : 0));
             this._confirmAndSaveAccessToken(res, fbres.access_token, fbTokenExpiration);
         });
@@ -71,11 +78,42 @@ class WebApp {
             if (fbres.id === user.userId) {
                 user.accessToken = fbAccessToken;
                 user.tokenExpiration = fbTokenExpiration;
-                res.send('Ready to do actual work!');
+                this._getPhotos(res);
             } else {
                 res.send('Sorry your id does not match the one specified in the config file.');
             }
         });
+    }
+    private _getPhotos(res: express.Response) {
+        this._fbClient.getPhotosOfMe().then<any>((fbres: any) =>{
+            let photos: fbImageMetaData[] = fbres.data;
+            let after: string = fbres.paging.cursors.after;
+            let promises: Q.IPromise<any>[] = [];
+            _.each(photos, photo => {
+                promises.push(this._checkIfPhotoHasSO(photo));
+            });
+            Q.all(promises).then<any>((values) =>{
+                user.photoIdsWithSO = _.filter(values, value => {
+                    return value != '';
+                });
+                res.send(user.photoIdsWithSO);
+            }).fail((reason) => {
+               console.log('Rejected promise: ' + reason);
+            });
+        });
+    }
+    
+    private _checkIfPhotoHasSO(photo: fbImageMetaData) {
+        return this._fbClient.getPeopleTaggedInPhoto(photo.id).then((fbres: any) => {
+             let tags: fbImageTag[] = fbres.data;
+             let tagsOfSO = _.filter(tags, tag => {
+                 return tag.id === user.soId || tag.id === user.alternateSoId;
+             });
+             if (tagsOfSO.length > 0) {
+                 return photo.id;
+             }
+             return '';                 
+         });
     }
 }
 

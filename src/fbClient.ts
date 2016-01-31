@@ -23,7 +23,6 @@ class FBClient {
     }
 
     getAccessTokenFromCode(code: string, redirectUrl: string) {
-        console.log('inside getAccessTokenFromCode');
         let deferred = Q.defer();
         fb.api('oauth/access_token', {
             client_id: this._fbAppId,
@@ -48,6 +47,33 @@ class FBClient {
         let deferred = Q.defer();
         fb.setAccessToken(this._accessToken);
         fb.api('me', (res) => {
+            if (!res || res.error) {
+                console.log(!res ? 'error occurred' : res.error);
+                deferred.reject(new Error(!res ? 'error occurred' : res.error));
+            }
+            deferred.resolve(res);
+        });
+        return deferred.promise;
+    }
+    
+    getPhotosOfMe(after?: string) {
+        let deferred = Q.defer();
+        fb.setAccessToken(this._accessToken);
+        let apiEndpoint = 'me/photos?limit=10' + (after ? ('&after=' + after) : '');
+        fb.api(apiEndpoint, (res) => {
+            if (!res || res.error) {
+                console.log(!res ? 'error occurred' : res.error);
+                deferred.reject(new Error(!res ? 'error occurred' : res.error));
+            }
+            deferred.resolve(res);
+        });
+        return deferred.promise;
+    }
+    
+    getPeopleTaggedInPhoto(photoId: string) {
+        let deferred = Q.defer();
+        fb.setAccessToken(this._accessToken);
+        fb.api(photoId + '/tags', (res) => {
             if (!res || res.error) {
                 console.log(!res ? 'error occurred' : res.error);
                 deferred.reject(new Error(!res ? 'error occurred' : res.error));
