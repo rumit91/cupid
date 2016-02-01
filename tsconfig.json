@@ -15,8 +15,6 @@
     "src\\app.ts",
     "src\\cupid.ts",
     "src\\fbClient.ts",
-    "src\\greeter.ts",
-    "src\\models\\user.ts",
-    "typings"
+    "src\\user.ts"
   ]
 }

@@ -4,7 +4,7 @@
 import _ = require('lodash');
 import Q = require('q');
 import schedule = require('node-schedule');
-import User = require('./models/user');
+import User = require('./user');
 import FBClient = require('./fbClient');
 import request = require('request');
 
@@ -97,7 +97,7 @@ class Cupid {
     }
        
     private _schedulePostingJob() {
-        const cronString = '0 * * * * *'; // Run every min;
+        const cronString = '0 /5 * * * *'; // Run every 5 min;
         schedule.scheduleJob(cronString, () => {
             this.postPhoto();
         });

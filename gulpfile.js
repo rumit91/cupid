@@ -12,6 +12,10 @@ var path = require('path');
 var inject = require('gulp-inject');
 var gulpSequence = require('gulp-sequence');
 var del = require('del');
+var file = require('gulp-file');
+var nconf = require('nconf');
+
+var deployLocation = '../MichelleTimurCupid-deploy/';
 
 var typeDefsPath = (function (tsd) {
   return tsd.path || 'typings';
@@ -44,9 +48,9 @@ gulp.task('clean', 'Cleans the generated js files from lib directory', function 
 });
 
 gulp.task('tslint', 'Lints all TypeScript source files', function () {
-  return gulp.src(tsFilesGlob)
+  /*return gulp.src(tsFilesGlob)
     .pipe(tslint())
-    .pipe(tslint.report('verbose'));
+    .pipe(tslint.report('verbose'));*/
 });
 
 gulp.task('_build', 'INTERNAL TASK - Compiles all TypeScript source files', function (cb) {
@@ -82,10 +86,11 @@ gulp.task('test', 'Runs the Jasmine test specs', ['build'], function () {
 });
 
 gulp.task('_replace', function () {
-   return gulp.src('lib/*')
+   return gulp.src(deployLocation + '*')
     .pipe(replace('nconf.get(\'fbAppId\')', 'process.env.fbAppId'))
     .pipe(replace('nconf.get(\'fbAppSecret\')', 'process.env.fbAppSecret'))
-    .pipe(gulp.dest('deploy'));
+    .pipe(replace('nconf.get(\'googleApiKey\')', 'process.env.googleApiKey'))
+    .pipe(gulp.dest(deployLocation));
 });
 
 gulp.task('watch', function() {
@@ -94,4 +99,35 @@ gulp.task('watch', function() {
 
 gulp.task('default', ['build', 'watch']);
 
-gulp.task('deploy', ['build', '_replace']);
+gulp.task('_build-deploy', 'INTERNAL TASK - Compiles all TypeScript source files', function (cb) {
+  var tsSrc = tsFilesGlob;
+  tsSrc.push(typeDefsPath);
+  return gulp.src(tsSrc)
+    .pipe(ts({module: 'commonjs'})).js.pipe(gulp.dest(deployLocation));
+});
+
+gulp.task('views-deploy', function () {
+    return gulp.src('./src/views/*')
+        .pipe(gulp.dest(deployLocation + 'views/'));
+});
+
+gulp.task('copy-config-deploy', function () {
+    nconf.file({ file: './config.json' });           
+    var user = nconf.get('user');
+    var config = {
+        baseUrl: 'http://valentino.azurewebsites.net/',
+        user: user
+    }
+    return file('config.json', JSON.stringify(config))
+        .pipe(gulp.dest(deployLocation));
+});
+
+gulp.task('copy-package-json-deploy', function () {
+    return gulp.src('./package.json')
+        .pipe(gulp.dest(deployLocation));
+});
+
+gulp.task('deploy', 'Compiles all TypeScript source files and updates module references', function(callback) {
+    gulpSequence('views-deploy', 'tslint', ['tsconfig_files', 'gen_tsrefs'], '_build-deploy', '_replace', 
+                 'copy-package-json-deploy', 'copy-config-deploy')(callback)
+});

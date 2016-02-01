@@ -28,6 +28,7 @@
   "devDependencies": {
     "del": "2.0.2",
     "gulp": "^3.9.0",
+    "gulp-file": "^0.2.0",
     "gulp-help": "^1.6.0",
     "gulp-inject": "3.0.0",
     "gulp-jasmine": "^2.0.1",

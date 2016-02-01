@@ -1,7 +1,7 @@
 /// <reference path="../typings/tsd.d.ts" />
 /// <reference path="../typings/app.d.ts" />
 
-import User = require('./models/user');
+import User = require('./user');
 import FBClient = require('./fbClient');
 import Cupid = require('./cupid');
 import express = require('express');
@@ -17,6 +17,7 @@ const FB_APP_SECRET = nconf.get('fbAppSecret');
 const GOOGLE_API_KEY = nconf.get('googleApiKey');
 const baseUrl = nconf.get('baseUrl');
 let user: User = nconf.get('user');
+var port = process.env.port || 3000;
 
 interface fbImageMetaData {
     id: string;
@@ -56,8 +57,8 @@ class WebApp {
     }
 
     start() {
-        this._app.listen(3000, function() {
-            console.log('Listening on port 3000!');
+        this._app.listen(port, function() {
+            console.log('Listening on port ' + port + '!');
         });
     }
 
