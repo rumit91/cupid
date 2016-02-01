@@ -6,3 +6,4 @@ config.json
 lib/config.json
 lib/
 deploy/
+webJob.zip

@@ -3,7 +3,6 @@
 
 import _ = require('lodash');
 import Q = require('q');
-import schedule = require('node-schedule');
 import User = require('./user');
 import FBClient = require('./fbClient');
 import request = require('request');
@@ -35,12 +34,12 @@ class Cupid {
         this._useAlternativeUserToPost = useAlternativeUserToPost;
         this._fbClient = fbClient;
         this._googleApiKey = googleApiKey;
+        this._isReady = true;
+        console.log('Cupid is ready!');
     }
-    
-    start() {
-        if (this._user) {
-            this._schedulePostingJob();
-        }
+
+    isReady() {
+        return this._isReady;
     }
     
     postInitialMessage() {
@@ -95,14 +94,7 @@ class Cupid {
         }
         return message;
     }
-       
-    private _schedulePostingJob() {
-        const cronString = '0 /5 * * * *'; // Run every 5 min;
-        schedule.scheduleJob(cronString, () => {
-            this.postPhoto();
-        });
-    }
-    
+
     private _shortenUrl(urlToShorten: string) {
         let deferred = Q.defer();
         const urlShortnerApiEndpoint = 'https://www.googleapis.com/urlshortener/v1/url?key=' + this._googleApiKey;   
