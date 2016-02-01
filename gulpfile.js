@@ -115,7 +115,7 @@ gulp.task('copy-config-deploy', function () {
     nconf.file({ file: './config.json' });           
     var user = nconf.get('user');
     var config = {
-        baseUrl: 'http://valentino.azurewebsites.net/',
+        baseUrl: 'http://valentino.azurewebsites.net',
         user: user
     }
     return file('config.json', JSON.stringify(config))
