@@ -3,6 +3,7 @@
 
 import User = require('./user');
 import FBClient = require('./fbClient');
+import AzureClient = require('./azureClient');
 import Cupid = require('./cupid');
 import express = require('express');
 import nconf = require('nconf');
@@ -17,11 +18,14 @@ const FB_APP_SECRET = nconf.get('fbAppSecret');
 const GOOGLE_API_KEY = nconf.get('googleApiKey');
 const baseUrl = nconf.get('baseUrl');
 let user: User = nconf.get('user');
-var port = process.env.port || 3000;
+const port = process.env.port || 3000;
+
+const AZURE_STORAGE_ACCOUNT = process.env.storageAccount || nconf.get('storageAccount');
+const AZURE_STORAGE_ACCESS_KEY = process.env.storageAccesskey || nconf.get('storageAccesskey');
 
 interface fbImageMetaData {
     id: string;
-    created_time: string; 
+    created_time: string;
     name?: string;
     from?: {
         name: string,
@@ -44,13 +48,14 @@ class WebApp {
     private _facebookRedirect = '/fbLoginRedirect';
     private _baseUrl: string;
     private _fbClient: FBClient;
+    private _azureClient: AzureClient;
     private _useAlternativeUserToPost = false;
     private _cupid: Cupid;
 
-    constructor(baseUrl: string, fbClient: FBClient) {
+    constructor(baseUrl: string, fbClient: FBClient, azureClient: AzureClient) {
         this._baseUrl = baseUrl;
         this._fbClient = fbClient;
-
+        this._azureClient = azureClient;
         this._app = express();
         this._app.set('view engine', 'jade');
         this._setupRoutes();
@@ -70,6 +75,7 @@ class WebApp {
         
         // Login route: immediatly redirect to the Facbook Auth flow
         this._app.get('/login', (req, res) => {
+            console.log(this._baseUrl + this._facebookRedirect);
             res.redirect(this._fbClient.getFacebookAuthUrl(this._baseUrl + this._facebookRedirect));
         });
         
@@ -77,18 +83,24 @@ class WebApp {
         this._app.get(this._facebookRedirect, (req, res) => {
             this._convertCodeToToken(res, req.query.code);
         });
-        
+
         this._app.get('/cupid', (req, res) => {
             this._createCupid(res);
         });
-        
+
         this._app.get('/cupid/photo', (req, res) => {
-            this._cupid.postPhoto();
-            res.send('Posting a photo');
+            if (this._cupid && this._cupid.isReady()) {
+                this._cupid.postPhoto();
+                res.send('Posting a photo');
+            } else {
+                console.log('Cupid is not ready :(');
+                res.send('Cupid is not ready :(');
+            }
         });
     }
 
     private _convertCodeToToken(res: express.Response, code: string) {
+        console.log(this._baseUrl + this._facebookRedirect);
         this._fbClient.getAccessTokenFromCode(code, this._baseUrl + this._facebookRedirect).then<any>((fbres: any) => {
             const fbTokenExpiration = new Date(new Date().getTime() + (fbres.expires ? fbres.expires : 0));
             this._confirmAndSaveAccessToken(res, fbres.access_token, fbTokenExpiration);
@@ -114,7 +126,7 @@ class WebApp {
         });
     }
     private _getPhotos(res: express.Response) {
-        this._fbClient.getPhotosOfMe().then<any>((fbres: any) =>{
+        this._fbClient.getPhotosOfMe().then<any>((fbres: any) => {
             let photos: fbImageMetaData[] = fbres.data;
             let after: string = fbres.paging.cursors.after;
             let promises: Q.IPromise<any>[] = [];
@@ -126,41 +138,47 @@ class WebApp {
             _.each(photos, photo => {
                 promises.push(this._checkIfPhotoHasSO(photo));
             });
-            Q.all(promises).then<any>((values) =>{
-                user.photoIdsWithSO = _.filter(values, value => {
+            Q.all(promises).then<any>((values) => {
+                let photoIdsWithSO = _.filter(values, value => {
                     return value != '';
                 });
-                res.send(user.photoIdsWithSO);
+                this._azureClient.storePhotoIds(photoIdsWithSO).fail(reason => {
+                    console.log('could not store blob');
+                    console.log(reason);
+                });
+                res.send(photoIdsWithSO);
             }).fail((reason) => {
-               console.log('Rejected promise: ' + reason);
+                console.log('Rejected promise: ' + reason);
             });
         });
     }
-    
+
     private _checkIfPhotoHasSO(photo: fbImageMetaData) {
         return this._fbClient.getPeopleTaggedInPhoto(photo.id).then((fbres: any) => {
-             let tags: fbImageTag[] = fbres.data;
-             let tagsOfSO = _.filter(tags, tag => {
-                 return tag.id === user.soId || tag.id === user.alternateSoId;
-             });
-             if (tagsOfSO.length > 0) {
-                 return photo.id;
-             }
-             return '';                 
-         });
+            let tags: fbImageTag[] = fbres.data;
+            let tagsOfSO = _.filter(tags, tag => {
+                return tag.id === user.soId || tag.id === user.alternateSoId;
+            });
+            if (tagsOfSO.length > 0) {
+                return photo.id;
+            }
+            return '';
+        });
     }
-    
+
     private _createCupid(res: express.Response) {
         if (user.accessToken !== '') {
-            this._cupid = new Cupid(user, this._useAlternativeUserToPost, this._fbClient, GOOGLE_API_KEY);
+            this._cupid = new Cupid(user, this._useAlternativeUserToPost, this._fbClient, this._azureClient, GOOGLE_API_KEY);
             this._cupid.postInitialMessage();
-            this._cupid.start();
             res.send('Cupid has been started <3');
         } else {
+            console.log('No access token');
             res.send('No access token :(');
         }
     }
 }
 
-let app = new WebApp(baseUrl, new FBClient(FB_APP_ID, FB_APP_SECRET));
+let app = new WebApp(baseUrl,
+    new FBClient(FB_APP_ID, FB_APP_SECRET),
+    new AzureClient(AZURE_STORAGE_ACCOUNT, AZURE_STORAGE_ACCESS_KEY));
 app.start();

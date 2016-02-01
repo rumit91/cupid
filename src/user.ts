@@ -8,7 +8,6 @@ interface User {
     soName: string;
     accessToken: string;
     tokenExpiration: Date;
-    photoIdsWithSO: string[];
 }
 
 export = User;
