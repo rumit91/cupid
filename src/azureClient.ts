@@ -9,7 +9,8 @@ class AzureClient {
     private _blobSvc: azure.BlobService;
     private _container = 'valentino';
     private _photoIdsBlob = 'photoids';
-    private _accessTokenBlob = 'accesstoken';
+    private _accessTokenBlob = 'useraccesstoken';
+    private _altAccessTokenBlob = 'altaccesstoken';
 
     constructor(storageAccount: string, storageAccessKey: string) {
         this._blobSvc = azure.createBlobService(storageAccount, storageAccessKey);
@@ -29,6 +30,29 @@ class AzureClient {
     retrievePhotoIds() {
         if (this._blobSvc) {
             return this._retrieveBlob(this._container, this._photoIdsBlob);
+        } else {
+            console.log('azure storage is not initailized');
+            Q.reject();
+        }
+    }
+    
+    storeAccessToken(accessToken: string, expires: Date, altUser: boolean = false) {
+        if (this._blobSvc) {
+            return this._createContainer().then(() => {
+              return this._createBlob((altUser ? this._altAccessTokenBlob : this._accessTokenBlob), JSON.stringify({
+                  accessToken: accessToken,
+                  expires: expires
+              }));  
+            });
+        } else {
+            console.log('azure storage is not initailized');
+            Q.reject();
+        }
+    }
+    
+    retrieveAccessToken(altUser: boolean = false) {
+        if (this._blobSvc) {
+            return this._retrieveBlob(this._container, (altUser ? this._altAccessTokenBlob : this._accessTokenBlob));
         } else {
             console.log('azure storage is not initailized');
             Q.reject();

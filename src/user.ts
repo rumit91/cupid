@@ -6,8 +6,6 @@ interface User {
     soId: string;
     alternateSoId: string;
     soName: string;
-    accessToken: string;
-    tokenExpiration: Date;
 }
 
 export = User;

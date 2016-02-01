@@ -15,6 +15,7 @@
     "test": "gulp test"
   },
   "dependencies": {
+    "azure-storage": "^0.8.0",
     "express": "^4.13.4",
     "fb": "^1.0.2",
     "jade": "^1.11.0",

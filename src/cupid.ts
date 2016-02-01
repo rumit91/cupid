@@ -11,8 +11,9 @@ import request = require('request');
 class Cupid {
     private _fbClient: FBClient;
     private _azureClient: AzureClient;
-    private _useAlternativeUserToPost = false;
+    private _useAltUserToPost = false;
     private _user: User;
+    private _accessToken: string;
     private _googleApiKey: string;
     private _postImage = 'http://i.imgur.com/sikWsoa.png';
     private _facebookPhotoUrl = 'https://www.facebook.com/photo.php?fbid=';
@@ -32,9 +33,10 @@ class Cupid {
         'Here\'s a good one!'
     ];
 
-    constructor(user: User, useAlternativeUserToPost: boolean, fbClient: FBClient, azureClient: AzureClient, googleApiKey: string) {
+    constructor(user: User, accessToken: string, useAltUserToPost: boolean, fbClient: FBClient, azureClient: AzureClient, googleApiKey: string) {
         this._user = user;
-        this._useAlternativeUserToPost = useAlternativeUserToPost;
+        this._accessToken = accessToken;
+        this._useAltUserToPost = useAltUserToPost;
         this._fbClient = fbClient;
         this._azureClient = azureClient;
         this._googleApiKey = googleApiKey;
@@ -57,7 +59,7 @@ class Cupid {
     
     // TODO: clean up this method
     postPhoto() {
-        this._fbClient.setAccessToken(this._user.accessToken);
+        this._fbClient.setAccessToken(this._accessToken);
         this._azureClient.retrievePhotoIds().then<any>((value: string) => {
             let photoIds: string[] = JSON.parse(value);
             const message = this._getPostMessage();
@@ -114,7 +116,7 @@ class Cupid {
 
     private _getPostMessage(): string {
         let message = _.sample(this._photoMessages);
-        if (!this._useAlternativeUserToPost || this._user.userId === this._user.postingUserId) {
+        if (!this._useAltUserToPost || this._user.userId === this._user.postingUserId) {
             message = '"' + message + '" - Your Cupid';
         }
         return message;

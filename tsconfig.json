@@ -16,7 +16,6 @@
     "src\\azureClient.ts",
     "src\\cupid.ts",
     "src\\fbClient.ts",
-    "src\\user.ts",
-    "typings"
+    "src\\user.ts"
   ]
 }

@@ -49,7 +49,6 @@ class WebApp {
     private _baseUrl: string;
     private _fbClient: FBClient;
     private _azureClient: AzureClient;
-    private _useAlternativeUserToPost = false;
     private _cupid: Cupid;
 
     constructor(baseUrl: string, fbClient: FBClient, azureClient: AzureClient) {
@@ -111,15 +110,15 @@ class WebApp {
         this._fbClient.setAccessToken(fbAccessToken);
         this._fbClient.getMe().then<any>((fbres: any) => {
             if (fbres.id === user.userId) {
-                user.accessToken = fbAccessToken;
-                user.tokenExpiration = fbTokenExpiration;
-                this._getPhotos(res);
+                this._azureClient.storeAccessToken(fbAccessToken, fbTokenExpiration).then(() => {
+                    this._getPhotos(res);
+                });
+                
             } else if (user.userId !== user.postingUserId && fbres.id === user.postingUserId) {
                 // Using alternate user to post.
-                user.accessToken = fbAccessToken;
-                user.tokenExpiration = fbTokenExpiration;
-                this._useAlternativeUserToPost = true;
-                res.redirect('./cupid');
+                this._azureClient.storeAccessToken(fbAccessToken, fbTokenExpiration, true).then(() => {
+                    res.redirect('./cupid');
+                });
             } else {
                 res.send('Sorry your id (' + fbres.id + ') does not match the one specified in the config file.');
             }
@@ -167,14 +166,25 @@ class WebApp {
     }
 
     private _createCupid(res: express.Response) {
-        if (user.accessToken !== '') {
-            this._cupid = new Cupid(user, this._useAlternativeUserToPost, this._fbClient, this._azureClient, GOOGLE_API_KEY);
+        // Try getting the alt user token.
+        this._azureClient.retrieveAccessToken(true).then((value: string) => {
+            let tokenAndExpiration = JSON.parse(value);
+            this._cupid = new Cupid(user, tokenAndExpiration.accessToken, true, this._fbClient, this._azureClient, GOOGLE_API_KEY);
             this._cupid.postInitialMessage();
-            res.send('Cupid has been started <3');
-        } else {
-            console.log('No access token');
-            res.send('No access token :(');
-        }
+            res.send('Cupid has been started with alt user <3');
+        }).fail(reason => {
+            console.log('No alt user token found');
+            // Try getting the regular user token.
+            this._azureClient.retrieveAccessToken().then((value: string) => {
+                let tokenAndExpiration = JSON.parse(value);
+                this._cupid = new Cupid(user, tokenAndExpiration.accessToken, false, this._fbClient, this._azureClient, GOOGLE_API_KEY);
+                this._cupid.postInitialMessage();
+                res.send('Cupid has been started with regular user <3');
+            }).fail(reason => {
+                console.log('No access token');
+                res.send('No access token :(');
+            });
+        });
     }
 }
 
