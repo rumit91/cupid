@@ -100,7 +100,6 @@ class AzureClient {
                 console.log(error.message);
                 deferred.reject(error);
             }
-            console.log(result);
             deferred.resolve(result);
         });
         return deferred.promise;
@@ -113,6 +112,7 @@ class AzureClient {
                 console.log(error.message);
                 deferred.reject(error);
             }
+            console.log('Saved blob: ' + container + '/' + blob);
             deferred.resolve(result);
         });
         return deferred.promise;

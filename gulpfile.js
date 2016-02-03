@@ -99,7 +99,7 @@ gulp.task('_replace', function () {
 });
 
 gulp.task('watch', function() {
-    gulp.watch([tsFilesGlob, './src/views/*'], ['build', 'copy-config', 'copy-messages']);
+    gulp.watch([tsFilesGlob, './src/views/*'], ['build', 'copy-messages', 'copy-config']);
 });
 
 gulp.task('default', ['build', 'watch']);
