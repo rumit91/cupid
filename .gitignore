@@ -7,3 +7,4 @@ lib/config.json
 lib/
 deploy/
 webJob.zip
+messages.json

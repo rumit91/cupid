@@ -4,6 +4,7 @@
 import _ = require('lodash');
 import Q = require('q');
 import User = require('./user');
+import Message = require('./message');
 import FBClient = require('./fbClient');
 import AzureClient = require('./azureClient');
 import request = require('request');
@@ -55,6 +56,25 @@ class Cupid {
             + 'For the next 10 days I\'ll send you photos of the two of you to remind you of all the amazing times you\'ve had together 💑\n\n'
             + 'To start things off maybe ' + this._user.userName.split(' ')[0] + ' can sing you this song? :P';
         this._fbClient.postToGroupFeed(this._user.groupId, message, link, '', '');
+    }
+    
+    postSpecialMessage() {
+        this._azureClient.retrieveSpecialMessages().then<any>((value: string) => {
+            let specialMessages: Message[] = JSON.parse(value);
+            if (specialMessages.length > 0) {
+                const post = specialMessages[0];
+                this._fbClient.postToGroupFeed(this._user.groupId, post.message, post.link, post.linkPicture, post.linkTitle);
+                console.log('posting a special message');
+            } else {
+                console.log('no more messages to post');
+            }
+            if (specialMessages.length > 1) {
+                specialMessages = specialMessages.slice(1);
+            } else {
+                specialMessages = [];
+            }
+            this._azureClient.storeSpecialMessages(specialMessages);
+        })
     }
     
     // TODO: clean up this method

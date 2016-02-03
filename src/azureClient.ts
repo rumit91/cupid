@@ -4,11 +4,13 @@
 import azure = require('azure-storage');
 import _ = require('lodash');
 import Q = require('q');
+import Message = require('./message');
 
 class AzureClient {
     private _blobSvc: azure.BlobService;
     private _container = 'valentino';
     private _photoIdsBlob = 'photoids';
+    private _specialMessagesBlob = 'specialmessages';
     private _accessTokenBlob = 'useraccesstoken';
     private _altAccessTokenBlob = 'altaccesstoken';
 
@@ -53,6 +55,26 @@ class AzureClient {
     retrieveAccessToken(altUser: boolean = false) {
         if (this._blobSvc) {
             return this._retrieveBlob(this._container, (altUser ? this._altAccessTokenBlob : this._accessTokenBlob));
+        } else {
+            console.log('azure storage is not initailized');
+            Q.reject();
+        }
+    }
+    
+    storeSpecialMessages(specialMessages: Message[]) {
+        if (this._blobSvc) {
+            return this._createContainer().then(() => {
+              return this._createBlob(this._specialMessagesBlob, JSON.stringify(specialMessages));  
+            });
+        } else {
+            console.log('azure storage is not initailized');
+            Q.reject();
+        }
+    }
+
+    retrieveSpecialMessages() {
+        if (this._blobSvc) {
+            return this._retrieveBlob(this._container, this._specialMessagesBlob);
         } else {
             console.log('azure storage is not initailized');
             Q.reject();

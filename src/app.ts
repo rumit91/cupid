@@ -2,6 +2,7 @@
 /// <reference path="../typings/app.d.ts" />
 
 import User = require('./user');
+import Message = require('./message');
 import FBClient = require('./fbClient');
 import AzureClient = require('./azureClient');
 import Cupid = require('./cupid');
@@ -96,6 +97,20 @@ class WebApp {
                 res.send('Cupid is not ready :(');
             }
         });
+        
+        this._app.get('/cupid/message', (req, res) => {
+            if (this._cupid && this._cupid.isReady()) {
+                this._cupid.postSpecialMessage();
+                res.send('Posting a special message');
+            } else {
+                console.log('Cupid is not ready :(');
+                res.send('Cupid is not ready :(');
+            }
+        });
+        
+        this._app.get('/storeMessages', (req, res) => {
+           this._storeSpecialMessages(res); 
+        });
     }
 
     private _convertCodeToToken(res: express.Response, code: string) {
@@ -184,6 +199,17 @@ class WebApp {
                 console.log('No access token');
                 res.send('No access token :(');
             });
+        });
+    }
+    
+    private _storeSpecialMessages(res: express.Response) {
+        nconf.file({ file: './messages.json' });
+        let messages: Message[] = nconf.get('messages');
+        console.log(messages);
+        this._azureClient.storeSpecialMessages(messages).then<any>(value => {
+            res.send('Saved messages in azure blob');
+        }).fail(reason => {
+           res.send('Could not save messages: ' + reason); 
         });
     }
 }

@@ -75,6 +75,11 @@ gulp.task('copy-config', function () {
         .pipe(gulp.dest('./lib/'));
 });
 
+gulp.task('copy-messages', function () {
+    return gulp.src('./messages.json')
+        .pipe(gulp.dest('./lib/'));
+});
+
 //run tslint task, then run _tsconfig_files and _gen_tsrefs in parallel, then run _build
 gulp.task('build', 'Compiles all TypeScript source files and updates module references', function(callback) {
     gulpSequence('views', 'tslint', ['tsconfig_files', 'gen_tsrefs'], '_build')(callback)
@@ -94,7 +99,7 @@ gulp.task('_replace', function () {
 });
 
 gulp.task('watch', function() {
-    gulp.watch([tsFilesGlob, './src/views/*'], ['build', 'copy-config']);
+    gulp.watch([tsFilesGlob, './src/views/*'], ['build', 'copy-config', 'copy-messages']);
 });
 
 gulp.task('default', ['build', 'watch']);
@@ -109,6 +114,11 @@ gulp.task('_build-deploy', 'INTERNAL TASK - Compiles all TypeScript source files
 gulp.task('views-deploy', function () {
     return gulp.src('./src/views/*')
         .pipe(gulp.dest(deployLocation + 'views/'));
+});
+
+gulp.task('copy-messages-deploy', function () {
+    return gulp.src('./messages.json')
+        .pipe(gulp.dest('./deploy/'));
 });
 
 gulp.task('copy-config-deploy', function () {
@@ -129,5 +139,5 @@ gulp.task('copy-package-json-deploy', function () {
 
 gulp.task('deploy', 'Compiles all TypeScript source files and updates module references', function(callback) {
     gulpSequence('views-deploy', 'tslint', ['tsconfig_files', 'gen_tsrefs'], '_build-deploy', '_replace', 
-                 'copy-package-json-deploy', 'copy-config-deploy')(callback)
+                 'copy-package-json-deploy', 'copy-messages-deploy', 'copy-config-deploy')(callback)
 });
