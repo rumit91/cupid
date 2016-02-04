@@ -116,7 +116,7 @@ class WebApp {
     private _convertCodeToToken(res: express.Response, code: string) {
         console.log(this._baseUrl + this._facebookRedirect);
         this._fbClient.getAccessTokenFromCode(code, this._baseUrl + this._facebookRedirect).then<any>((fbres: any) => {
-            const fbTokenExpiration = new Date(new Date().getTime() + (fbres.expires ? fbres.expires : 0));
+            const fbTokenExpiration = new Date(new Date().getTime() + (fbres.expires ? (fbres.expires*1000) : 0));
             this._confirmAndSaveAccessToken(res, fbres.access_token, fbTokenExpiration);
         });
     }
