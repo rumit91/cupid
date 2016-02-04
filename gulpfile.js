@@ -118,7 +118,7 @@ gulp.task('views-deploy', function () {
 
 gulp.task('copy-messages-deploy', function () {
     return gulp.src('./messages.json')
-        .pipe(gulp.dest('./deploy/'));
+        .pipe(gulp.dest(deployLocation));
 });
 
 gulp.task('copy-config-deploy', function () {
