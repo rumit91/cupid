@@ -49,15 +49,6 @@ class Cupid {
         return this._isReady;
     }
 
-    postInitialMessage() {
-        const link = 'https://www.youtube.com/watch?v=VPRjCeoBqrI';
-        const message = '💘Hi ' + this._getCoupleNames() + '!💘 \n\n'
-            + 'Valentine\'s Day is coming up and I\'ve been assigned to be your cupid this year! '
-            + 'For the next 10 days I\'ll send you photos of the two of you to remind you of all the amazing times you\'ve had together 💑\n\n'
-            + 'To start things off maybe ' + this._user.userName.split(' ')[0] + ' can sing you this song? :P';
-        this._fbClient.postToGroupFeed(this._user.groupId, message, link, '', '');
-    }
-    
     postSpecialMessage() {
         this._azureClient.retrieveSpecialMessages().then<any>((value: string) => {
             let specialMessages: Message[] = JSON.parse(value);

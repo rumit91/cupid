@@ -17,6 +17,7 @@
     "src\\cupid.ts",
     "src\\fbClient.ts",
     "src\\message.ts",
-    "src\\user.ts"
+    "src\\user.ts",
+    "typings"
   ]
 }

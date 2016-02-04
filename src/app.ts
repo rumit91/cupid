@@ -185,7 +185,7 @@ class WebApp {
         this._azureClient.retrieveAccessToken(true).then((value: string) => {
             let tokenAndExpiration = JSON.parse(value);
             this._cupid = new Cupid(user, tokenAndExpiration.accessToken, true, this._fbClient, this._azureClient, GOOGLE_API_KEY);
-            this._cupid.postInitialMessage();
+            this._cupid.postSpecialMessage();
             res.send('Cupid has been started with alt user <3');
         }).fail(reason => {
             console.log('No alt user token found');
@@ -193,7 +193,7 @@ class WebApp {
             this._azureClient.retrieveAccessToken().then((value: string) => {
                 let tokenAndExpiration = JSON.parse(value);
                 this._cupid = new Cupid(user, tokenAndExpiration.accessToken, false, this._fbClient, this._azureClient, GOOGLE_API_KEY);
-                this._cupid.postInitialMessage();
+                this._cupid.postSpecialMessage();
                 res.send('Cupid has been started with regular user <3');
             }).fail(reason => {
                 console.log('No access token');
