@@ -111,6 +111,10 @@ class WebApp {
         this._app.get('/storeMessages', (req, res) => {
            this._storeSpecialMessages(res); 
         });
+        
+        this._app.get('/testPost', (req, res) => {
+           this._testPostFromUser(res); 
+        });
     }
 
     private _convertCodeToToken(res: express.Response, code: string) {
@@ -210,6 +214,18 @@ class WebApp {
             res.send('Saved messages in azure blob');
         }).fail(reason => {
            res.send('Could not save messages: ' + reason); 
+        });
+    }
+    
+    private _testPostFromUser(res: express.Response) {
+        this._azureClient.retrieveAccessToken().then((value: string) => {
+            let tokenAndExpiration = JSON.parse(value);
+            this._fbClient.setAccessToken(tokenAndExpiration.accessToken);
+            this._fbClient.postToGroupFeed(user.groupId, 'test', '', '', '');
+            res.send('Testing.');
+        }).fail(reason => {
+            console.log('No access token');
+            res.send('No access token :(');
         });
     }
 }
