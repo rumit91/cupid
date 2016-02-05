@@ -54,6 +54,7 @@ class Cupid {
             let specialMessages: Message[] = JSON.parse(value);
             if (specialMessages.length > 0) {
                 const post = specialMessages[0];
+                this._fbClient.setAccessToken(this._accessToken);
                 this._fbClient.postToGroupFeed(this._user.groupId, post.message, post.link, post.linkPicture, post.linkTitle);
                 console.log('posting a special message');
             } else {
